@@ -1,15 +1,15 @@
-const { getLastRunTime, submitQuery } = require('../sql.js');
+const { getLastRunTime, submitQuery } = require('../sql');
 
 const getStartTime = async (type) => {
 	const data = await getLastRunTime(type);
 	const lastRunTime = data[0].LastRunTime;
 
-	Date.prototype.addHours = function (h) {
-		this.setTime(this.getTime() + h * 60 * 60 * 1000);
-		return this;
-	};
+	// Date.prototype.addHours = function (h) {
+	// 	this.setTime(this.getTime() + h * 60 * 60 * 1000);
+	// 	return this;
+	// };
 
-	const date = new Date().addHours(5);
+	const date = new Date();
 	let year = date.getFullYear();
 	let month = ('0' + (date.getMonth() + 1)).slice(-2);
 	let day = ('0' + date.getDate()).slice(-2);
@@ -17,7 +17,7 @@ const getStartTime = async (type) => {
 	let min = ('0' + date.getMinutes()).slice(-2);
 	let seconds = ('0' + date.getSeconds()).slice(-2);
 	let milliseconds = ('00' + date.getMilliseconds()).slice(-3);
-	const currentTime = `${year}-${month}-${day}T${hour}:${min}:${seconds}.${milliseconds}`;
+	const currentTime = `${year}-${month}-${day}T${hour}:${min}:${seconds}.${milliseconds}-05:00`;
 
 	return {
 		lastRunTime: lastRunTime,
@@ -32,4 +32,7 @@ const submitStartTime = async (type, currentTime) => {
 	return res;
 };
 
-module.exports = { getStartTime, submitStartTime };
+module.exports = {
+	getStartTime,
+	submitStartTime,
+};
