@@ -2,39 +2,62 @@ const express = require('express');
 const app = express();
 
 const { type } = require('./config.js');
-// const { andromedaAuthorization } = require('./authorization.js');
+const { connectDb } = require('./sql');
+const { andromedaAuthorization } = require('./authorization.js');
 // const { getStartTime, submitStartTime } = require('./functions/runTimes.js');
-// const { sendErrorReport } = require('./functions/errorReporting.js');
+const { sendErrorReport } = require('./functions/errorReporting.js');
 
-const { getSQLServerData } = require('./sql')
+const { getSQLServerData } = require('./sql');
 
 const server = app.listen(6000, async () => {
-	console.log('App is listening...');
-	// let authorizationResult = await andromedaAuthorization();
-	// console.log(authorizationResult)
-	await getSQLServerData()
+	console.log('Andromeda Revisions is running...');
+	const authorizationResult = await andromedaAuthorization();
+	const connectDbResult = await connectDb();
 
-	// if (authorizationResult.indexOf('Error') === -1) {
-	// 	console.log('Authorization complete');
-	// 	///const { lastRunTime, nextRunTime } = await getStartTime(type);
+	const errors = [];
 
-	// 	// let allErrors = [
-	// 	// 	{
-	// 	// 		err: 'Test',
-	// 	// 		lastId: 1,
-	// 	// 	},
-	// 	// ];
+	if (
+		authorizationResult.indexOf('Error') === -1 &&
+		connectDbResult === 'Complete'
+	) {
+		console.log('Authorization complete');
+		///const { lastRunTime, nextRunTime } = await getStartTime(type);
 
-	// 	// allErrors = allErrors.flat();
+		// let allErrors = [
+		// 	{
+		// 		err: 'Test',
+		// 		lastId: 1,
+		// 	},
+		// ];
 
-	// 	// if (allErrors.length) {
-	// 	// 	await sendErrorReport(allErrors, type);
-	// 	// }
+		// allErrors = allErrors.flat();
 
-	// 	//await submitStartTime(type, nextRunTime);
-	// }
+		// if (allErrors.length) {
+		// 	await sendErrorReport(allErrors, type);
+		// }
 
-	//process.kill(process.pid, 'SIGTERM');
+		//await submitStartTime(type, nextRunTime);
+	} else {
+		if (authorizationResult.indexOf('Error') === -1) {
+			errors.push({
+				type,
+				err: 'Andromeda Authorization Error',
+			});
+		}
+
+		if (connectDbResult !== 'Complete') {
+			errors.push({
+				type,
+				err: 'Connect DB Error',
+			});
+		}
+	}
+
+	if (errors.flat().length) {
+		await sendErrorReport(errors.flat(), type);
+	}
+
+	process.kill(process.pid, 'SIGTERM');
 });
 
 process.on('SIGTERM', () => {
