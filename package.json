@@ -13,7 +13,8 @@
 		"crypto-js": "^4.1.1",
 		"excel4node": "^1.7.2",
 		"express": "^4.17.1",
-		"msnodesqlv8": "^2.4.4",
+		"msnodesqlv8": "^2.4.5",
+		"mssql": "^8.0.2",
 		"nodemailer": "^6.6.3",
 		"nodemon": "^2.0.12"
 	}
