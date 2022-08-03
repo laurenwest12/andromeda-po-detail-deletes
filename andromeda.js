@@ -131,26 +131,35 @@ const updateImports = async (arr) => {
   return errors;
 };
 
-//Returns an array of objects retrieved from the DB of all ids of po details that have been deleted, but are still active in our DB
-const getDeletedPODetails = async (ids) => {
-  // //Get all current id po details from our DB
-  // const sqlPODetails = await getSQLServerData(
-  //   'ProductionOrderDetailImportArchive'
-  //   //`WHERE MostRecent = 'Yes'`
-  // );
+/*
+1. Finds all of our current po details from ProductionOrderDetailImportArchive
+2. Finds all po details that are in our db, but deleted from Andromda
+3. Adds the deleted records to a delete table (ProductionOrderDetailDeletes) and deletes them from the archive
+4. Updates the ProductionOrdersImport table with the correct detail PO if a record was deleted then added back
+*/
+const deletePODetails = async (ids) => {
+  //Get all current id po details from our DB
+  const sqlPODetails = await getSQLServerData(
+    'ProductionOrderDetailImportArchive'
+  );
 
-  // //Find id po details that are in our DB, but are deleted from Andromeda
-  // const deletedPODetails = sqlPODetails.filter(
-  //   ({ idPODetail }) => !ids.includes(parseInt(idPODetail))
-  // );
+  //Find id po details that are in our DB, but are deleted from Andromeda
+  const deletedPODetails = sqlPODetails.filter(
+    ({ idPODetail }) => !ids.includes(parseInt(idPODetail))
+  );
 
-  // const insertAndDeleteErrors = await insertAndDeleteDetails(deletedPODetails);
+  // Insert po details into delete table and then delete from archive
+  const insertAndDeleteErrors = await insertAndDeleteDetails(deletedPODetails);
 
+  // Update the import table with the correct id
   const importsToUpdate = await getProductionOrderImportsToUpdate();
-  await updateImports(importsToUpdate);
+  const updateErrors = await updateImports(importsToUpdate);
+
+  //Return any errors
+  return [...insertAndDeleteErrors, ...updateErrors];
 };
 
 module.exports = {
   getCurrentPODetailIds,
-  getDeletedPODetails,
+  deletePODetails,
 };

@@ -7,7 +7,7 @@ const { andromedaAuthorization } = require('./authorization.js');
 // const { getStartTime, submitStartTime } = require('./functions/runTimes.js');
 const { sendErrorReport } = require('./functions/errorReporting.js');
 
-const { getCurrentPODetailIds, getDeletedPODetails } = require('./andromeda');
+const { getCurrentPODetailIds, deletePODetails } = require('./andromeda');
 
 const server = app.listen(6000, async () => {
   console.log('Andromeda PO Detail Deletes is running...');
@@ -18,16 +18,17 @@ const server = app.listen(6000, async () => {
     await connectDb();
 
     const andromedaIds = await getCurrentPODetailIds();
-    const deletedIds = await getDeletedPODetails(andromedaIds);
+    const deleteErrors = await deletePODetails(andromedaIds);
+    deleteErrors && errors.push(deleteErrors);
   } catch (err) {
     errors.push({
       err: err?.message,
     });
   }
 
-  // if (errors.flat().length) {
-  //   await sendErrorReport(errors.flat(), type);
-  // }
+  if (errors.flat().length) {
+    await sendErrorReport(errors.flat(), type);
+  }
 
   process.kill(process.pid, 'SIGTERM');
 });
