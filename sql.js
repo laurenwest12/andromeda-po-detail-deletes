@@ -36,6 +36,15 @@ const getSQLServerData = async (table, where) => {
   }
 };
 
+const getSQLServerDataByQuery = async (query) => {
+  try {
+    const res = await pool.query(query);
+    return res?.recordset;
+  } catch (err) {
+    return `Error: ${err?.message}`;
+  }
+};
+
 const getValues = (obj, timestamp) => {
   const values = Object.values(obj);
   const sqlString = values.reduce((acc, value, index) => {
@@ -68,12 +77,7 @@ const executeProcedure = async (proc) => {
 };
 
 const submitQuery = async (query) => {
-  try {
-    await pool.query(query);
-    return 'Complete';
-  } catch (err) {
-    return `Error: ${err?.message}`;
-  }
+  await pool.query(query);
 };
 
 const submitAllQueries = async (data, table, timestamp = false) => {
@@ -81,9 +85,13 @@ const submitAllQueries = async (data, table, timestamp = false) => {
   for (let i = 0; i < data.length; ++i) {
     const values = await getValues(data[i], timestamp);
     const query = insertStatement(table, values);
-    const res = await submitQuery(query);
-    if (res.indexOf('Error') !== -1) {
-      errors.push({ query, err: res });
+    try {
+      await submitQuery(query);
+    } catch (err) {
+      errors.push({
+        query,
+        err: err?.message,
+      });
     }
   }
   return errors;
@@ -93,6 +101,7 @@ module.exports = {
   connectDb,
   getLastRunTime,
   getSQLServerData,
+  getSQLServerDataByQuery,
   executeProcedure,
   submitQuery,
   submitAllQueries,

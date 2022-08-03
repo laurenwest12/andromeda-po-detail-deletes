@@ -1,6 +1,11 @@
 const axios = require('axios');
 const { url, idQuery } = require('./config.js');
-const { getSQLServerData, submitAllQueries } = require('./sql');
+const {
+  getSQLServerData,
+  submitAllQueries,
+  submitQuery,
+  getSQLServerDataByQuery,
+} = require('./sql');
 
 //Returns an array of all current ids for po details
 const getCurrentPODetailIds = async () => {
@@ -10,12 +15,42 @@ const getCurrentPODetailIds = async () => {
 
 //Insert the po details that need to be deleted into a delete table in SQL Server and delete them from the original table
 const insertAndDeleteDetails = async (arr) => {
+  const errors = [];
+
+  //Insert all records into the delete table
   const submitErrors = await submitAllQueries(
     arr,
     'ProductionOrderDetailDeletes',
     true
   );
-  console.log(submitErrors);
+
+  submitErrors.length && errors.push(submitErrors);
+
+  //Get distinct records
+  const deleteFromArchive = await getSQLServerDataByQuery(
+    `SELECT DISTINCT idPO, idPODetail, Style, Color FROM ProductionOrderDetailDeletes`
+  );
+
+  //Delete records from the archive
+  for (let i = 0; i < deleteFromArchive.length; ++i) {
+    const record = deleteFromArchive[i];
+    const { idPO, idPODetail, Style, Color } = record;
+    try {
+      await submitQuery(
+        `DELETE FROM ProductionOrderDetailImportArchive WHERE idPODetail = '${idPODetail}'`
+      );
+    } catch (err) {
+      errors.push({
+        idPO,
+        idPODetail,
+        style: Style,
+        color: Color,
+        err: err?.message,
+      });
+    }
+  }
+
+  return errors.flat();
 };
 
 // const updateProductionImport = async (arr) => {
@@ -33,22 +68,14 @@ const insertAndDeleteDetails = async (arr) => {
 const getDeletedPODetails = async (ids) => {
   //Get all current id po details from our DB
   const sqlPODetails = await getSQLServerData(
-    'ProductionOrderDetailImportArchive',
-    `WHERE MostRecent = 'Yes'`
+    'ProductionOrderDetailImportArchive'
+    //`WHERE MostRecent = 'Yes'`
   );
 
   //Find id po details that are in our DB, but are deleted from Andromeda
   const deletedPODetails = sqlPODetails.filter(
     ({ idPODetail }) => !ids.includes(parseInt(idPODetail))
   );
-
-  // //Replace the dates in a way that can be read in SQL Server
-  // deletedPODetails.forEach((detail) => {
-  //   const { RefreshedTime, ERPProcessedTime, ECDBProcessedTime } = detail;
-  //   detail.RefreshedTime = `CAST('${RefreshedTime}' as datetime)`;
-  //   detail.ERPProcessedTime = `CAST('${ERPProcessedTime}' as datetime)`;
-  //   detail.ECDBProcessedTime = `CAST('${ECDBProcessedTime}' as datetime)`;
-  // });
 
   await insertAndDeleteDetails(deletedPODetails);
   // // await updateProductionImport(deletedPODetails);
