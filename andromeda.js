@@ -93,7 +93,43 @@ const getProductionOrderImportsToUpdate = async () => {
   return importsToUpdate;
 };
 
-const updateImports = async (arr) => {};
+const getNewIdPODetail = async (where) => {
+  const row = await getSQLServerData(
+    'ProductionOrderDetailImportArchive',
+    where
+  );
+  return row[0]?.idPODetail || 0;
+};
+
+const updateImports = async (arr) => {
+  const errors = [];
+  for (let i = 0; i < arr.length; ++i) {
+    const { idPO, Style, Color } = arr[i];
+    const newId = await getNewIdPODetail(
+      `WHERE
+			idPO = '${idPO}'
+			and Style = '${Style}'
+			and Color = '${Color}'
+			and MostRecent = 'Yes'`
+    );
+    try {
+      await submitQuery(`UPDATE [Andromeda-UpTo].[dbo].[ProductionOrdersImport]
+			SET idPODetail = '${newId}'
+			WHERE idPO = '${idPO}'
+			and Style = '${Style}'
+			and Color = '${Color}'`);
+    } catch (err) {
+      errors.push({
+        idPO,
+        idPODetail: newId,
+        style: Style,
+        color: Color,
+        err: err?.message,
+      });
+    }
+  }
+  return errors;
+};
 
 //Returns an array of objects retrieved from the DB of all ids of po details that have been deleted, but are still active in our DB
 const getDeletedPODetails = async (ids) => {
