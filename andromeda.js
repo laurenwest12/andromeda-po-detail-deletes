@@ -2,23 +2,23 @@ const axios = require('axios');
 const { url } = require('./config.js');
 
 const getAndromedaData = async (query, start) => {
-	try {
-		let res;
+  try {
+    let res;
 
-		//Custom query example
-		res = await axios.post(`${url}/search/query/${query}`, {
-			getafterdate: start,
-		});
+    //Custom query example
+    res = await axios.post(`${url}/search/query/${query}`, {
+      getafterdate: start,
+    });
 
-		//Andromeda table example
-		res = await axios.get(`${url}/bo/table`);
+    //Andromeda table example
+    res = await axios.get(`${url}/bo/table`);
 
-		const { data } = res;
-	} catch (err) {
-		return err;
-	}
+    const { data } = res;
+  } catch (err) {
+    return err;
+  }
 };
 
 module.exports = {
-	getAndromedaData,
+  getAndromedaData,
 };

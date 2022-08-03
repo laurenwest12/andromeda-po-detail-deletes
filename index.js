@@ -8,60 +8,35 @@ const { andromedaAuthorization } = require('./authorization.js');
 const { sendErrorReport } = require('./functions/errorReporting.js');
 
 const { getSQLServerData } = require('./sql');
+const { getCurrentPODetailIds } = require('./andromeda');
 
 const server = app.listen(6000, async () => {
-	console.log('Andromeda Revisions is running...');
-	const authorizationResult = await andromedaAuthorization();
-	const connectDbResult = await connectDb();
+  console.log('Andromeda Revisions is running...');
+  const errors = [];
+  try {
+    await andromedaAuthorization();
+    console.log('Authorization complete');
+    await connectDb();
+    ///const { lastRunTime, nextRunTime } = await getStartTime(type);
+    await getCurrentPODetailIds();
+    //await submitStartTime(type, nextRunTime);
+  } catch (err) {
+    console.log(err);
+    errors.push({
+      err: err?.message,
+    });
+  }
 
-	const errors = [];
+  console.log(errors);
+  // if (errors.flat().length) {
+  //   await sendErrorReport(errors.flat(), type);
+  // }
 
-	if (
-		authorizationResult.indexOf('Error') === -1 &&
-		connectDbResult === 'Complete'
-	) {
-		console.log('Authorization complete');
-		///const { lastRunTime, nextRunTime } = await getStartTime(type);
-
-		// let allErrors = [
-		// 	{
-		// 		err: 'Test',
-		// 		lastId: 1,
-		// 	},
-		// ];
-
-		// allErrors = allErrors.flat();
-
-		// if (allErrors.length) {
-		// 	await sendErrorReport(allErrors, type);
-		// }
-
-		//await submitStartTime(type, nextRunTime);
-	} else {
-		if (authorizationResult.indexOf('Error') === -1) {
-			errors.push({
-				type,
-				err: 'Andromeda Authorization Error',
-			});
-		}
-
-		if (connectDbResult !== 'Complete') {
-			errors.push({
-				type,
-				err: 'Connect DB Error',
-			});
-		}
-	}
-
-	if (errors.flat().length) {
-		await sendErrorReport(errors.flat(), type);
-	}
-
-	process.kill(process.pid, 'SIGTERM');
+  process.kill(process.pid, 'SIGTERM');
 });
 
 process.on('SIGTERM', () => {
-	server.close(() => {
-		console.log('Process terminated');
-	});
+  server.close(() => {
+    console.log('Process terminated');
+  });
 });
