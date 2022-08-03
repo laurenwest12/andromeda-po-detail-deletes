@@ -1,5 +1,10 @@
 const axios = require('axios');
-const { url } = require('./config.js');
+const { url, idQuery } = require('./config.js');
+
+const getCurrentPODetailIds = async () => {
+  const { data } = await axios.post(`${url}/search/query/${idQuery}`);
+  return data.map(({ id_productionorderdetail }) => id_productionorderdetail);
+};
 
 const getAndromedaData = async (query, start) => {
   try {
@@ -20,5 +25,5 @@ const getAndromedaData = async (query, start) => {
 };
 
 module.exports = {
-  getAndromedaData,
+  getCurrentPODetailIds,
 };

@@ -17,9 +17,9 @@ const server = app.listen(6000, async () => {
     await andromedaAuthorization();
     console.log('Authorization complete');
     await connectDb();
-    ///const { lastRunTime, nextRunTime } = await getStartTime(type);
-    await getCurrentPODetailIds();
-    //await submitStartTime(type, nextRunTime);
+
+    const andromedaIds = await getCurrentPODetailIds();
+    console.log(andromedaIds);
   } catch (err) {
     console.log(err);
     errors.push({
