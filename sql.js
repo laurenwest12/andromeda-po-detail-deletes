@@ -36,14 +36,26 @@ const getSQLServerData = async (table, where) => {
   }
 };
 
-const insertTableStatement = (table, fields, values) => {
-  return `SELECT *
-    INTO ${table}
-    FROM (VALUES ${values}) t1 ${fields}`;
+const getValues = (obj, timestamp) => {
+  const values = Object.values(obj);
+  const sqlString = values.reduce((acc, value, index) => {
+    typeof value === 'string' && value.replaceAll("'", "''");
+    if (typeof value === 'object') {
+      acc += `'${value.toISOString()}',`;
+    } else if (index === values.length - 1 && timestamp) {
+      acc += `'${value}', CURRENT_TIMESTAMP)`;
+    } else if (index === values.length - 1) {
+      acc += `'${value}')`;
+    } else {
+      acc += `'${value}',`;
+    }
+    return acc;
+  }, `(`);
+  return sqlString;
 };
 
-const insertStatement = (table, fields, values) => {
-  return `INSERT INTO ${table} SELECT * FROM (VALUES ${values}) t1 ${fields}`;
+const insertStatement = (table, values) => {
+  return `INSERT INTO ${table} VALUES ${values}`;
 };
 
 const executeProcedure = async (proc) => {
@@ -64,14 +76,14 @@ const submitQuery = async (query) => {
   }
 };
 
-const submitAllQueries = async (fn, data, table, fields) => {
+const submitAllQueries = async (data, table, timestamp = false) => {
   const errors = [];
   for (let i = 0; i < data.length; ++i) {
-    const values = await fn(data[i]);
-    const query = insertStatement(table, fields, values);
+    const values = await getValues(data[i], timestamp);
+    const query = insertStatement(table, values);
     const res = await submitQuery(query);
     if (res.indexOf('Error') !== -1) {
-      errors.push({ query, err: res, type: table });
+      errors.push({ query, err: res });
     }
   }
   return errors;

@@ -7,11 +7,10 @@ const { andromedaAuthorization } = require('./authorization.js');
 // const { getStartTime, submitStartTime } = require('./functions/runTimes.js');
 const { sendErrorReport } = require('./functions/errorReporting.js');
 
-const { getSQLServerData } = require('./sql');
-const { getCurrentPODetailIds } = require('./andromeda');
+const { getCurrentPODetailIds, getDeletedPODetails } = require('./andromeda');
 
 const server = app.listen(6000, async () => {
-  console.log('Andromeda Revisions is running...');
+  console.log('Andromeda PO Detail Deletes is running...');
   const errors = [];
   try {
     await andromedaAuthorization();
@@ -19,7 +18,7 @@ const server = app.listen(6000, async () => {
     await connectDb();
 
     const andromedaIds = await getCurrentPODetailIds();
-    console.log(andromedaIds);
+    const deletedIds = await getDeletedPODetails(andromedaIds);
   } catch (err) {
     console.log(err);
     errors.push({
