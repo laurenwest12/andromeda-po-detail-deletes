@@ -20,13 +20,11 @@ const server = app.listen(6000, async () => {
     const andromedaIds = await getCurrentPODetailIds();
     const deletedIds = await getDeletedPODetails(andromedaIds);
   } catch (err) {
-    console.log(err);
     errors.push({
       err: err?.message,
     });
   }
 
-  console.log(errors);
   // if (errors.flat().length) {
   //   await sendErrorReport(errors.flat(), type);
   // }
