@@ -13,46 +13,27 @@ const getCurrentPODetailIds = async () => {
   return data.map(({ id_productionorderdetail }) => id_productionorderdetail);
 };
 
-//Insert the po details that need to be deleted into a delete table in SQL Server and delete them from the original table
+//Insert the po details that need to be deleted into a delete table in SQL Server and delete them from the archive table
 const insertAndDeleteDetails = async (arr) => {
   const errors = [];
 
-  // //Insert all records into the delete table
-  // const submitErrors = await submitAllQueries(
-  //   arr,
-  //   'ProductionOrderDetailDeletes',
-  //   true
-  // );
-
-  // submitErrors.length && errors.push(submitErrors);
-
-  //Get distinct records currently in the archive
-  const currentArchive = await getSQLServerDataByQuery(
-    `SELECT DISTINCT idPO, idPODetail, Style, Color FROM ProductionOrderDetailImportArchive`
+  //Insert all records into the delete table
+  const submitErrors = await submitAllQueries(
+    arr,
+    'ProductionOrderDetailDeletes',
+    true
   );
 
-  //Get distinct ids currently in the archive
-  const currentArchiveIds = currentArchive.map(({ idPODetail }) => idPODetail);
-
-  //Get distinct records currently in the deletes
-  const currentDeletes = await getSQLServerDataByQuery(
-    `SELECT DISTINCT idPO, idPODetail, Style, Color FROM ProductionOrderDetailDeletes`
-  );
-
-  //Filter the deletes to only the records that have yet to be deleted from the archive
-  const deleteFromArchive = currentDeletes.filter(({ idPODetail }) =>
-    currentArchiveIds.includes(idPODetail)
-  );
+  submitErrors.length && errors.push(submitErrors);
 
   //Delete records from the archive
-  for (let i = 0; i < deleteFromArchive.length; ++i) {
-    const record = deleteFromArchive[i];
+  for (let i = 0; i < arr.length; ++i) {
+    const record = arr[i];
     const { idPO, idPODetail, Style, Color } = record;
     try {
       await submitQuery(
         `DELETE FROM ProductionOrderDetailImportArchive WHERE idPODetail = '${idPODetail}'`
       );
-      console.log(idPODetail);
     } catch (err) {
       errors.push({
         idPO,
@@ -68,16 +49,11 @@ const insertAndDeleteDetails = async (arr) => {
 };
 
 //Get the production order imports that need to have the id updated since it has since been deleted
-const getProductionOrderImportsToUpdate = async () => {
-  //Get all ids that have been deleted
-  const deletedIds = await getSQLServerDataByQuery(
-    'SELECT DISTINCT idPODetail FROM ProductionOrderDetailDeletes'
-  );
-
+const getProductionOrderImportsToUpdate = async (arr) => {
   //Put the ids into a WHERE clause format
-  const deletedIdClause = deletedIds.reduce((acc, value, index) => {
+  const deletedIdClause = arr.reduce((acc, value, index) => {
     const { idPODetail } = value;
-    if (index === deletedIds.length - 1) {
+    if (index === arr.length - 1) {
       acc += `'${idPODetail}')`;
     } else {
       acc += `'${idPODetail}',`;
@@ -148,15 +124,22 @@ const deletePODetails = async (ids) => {
     ({ idPODetail }) => !ids.includes(parseInt(idPODetail))
   );
 
-  // Insert po details into delete table and then delete from archive
-  const insertAndDeleteErrors = await insertAndDeleteDetails(deletedPODetails);
+  if (deletedPODetails.length) {
+    // Insert po details into delete table and then delete from archive
+    const insertAndDeleteErrors = await insertAndDeleteDetails(
+      deletedPODetails
+    );
 
-  // Update the import table with the correct id
-  const importsToUpdate = await getProductionOrderImportsToUpdate();
-  const updateErrors = await updateImports(importsToUpdate);
+    // Update the import table with the correct id
+    const importsToUpdate = await getProductionOrderImportsToUpdate(
+      deletedPODetails
+    );
+    const updateErrors = await updateImports(importsToUpdate);
 
-  //Return any errors
-  return [...insertAndDeleteErrors, ...updateErrors];
+    //Return any errors
+    return [...insertAndDeleteErrors, ...updateErrors];
+  }
+  return [];
 };
 
 module.exports = {

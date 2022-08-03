@@ -4,7 +4,6 @@ const app = express();
 const { type } = require('./config.js');
 const { connectDb } = require('./sql');
 const { andromedaAuthorization } = require('./authorization.js');
-// const { getStartTime, submitStartTime } = require('./functions/runTimes.js');
 const { sendErrorReport } = require('./functions/errorReporting.js');
 
 const { getCurrentPODetailIds, deletePODetails } = require('./andromeda');
