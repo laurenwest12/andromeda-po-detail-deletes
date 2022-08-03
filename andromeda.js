@@ -67,16 +67,33 @@ const insertAndDeleteDetails = async (arr) => {
   return errors.flat();
 };
 
-//Update the Production Import table with the correct idPODetail for records that have been deleted
-const updateProductionImport = async () => {
+//Get the production order imports that need to have the id updated since it has since been deleted
+const getProductionOrderImportsToUpdate = async () => {
   //Get all ids that have been deleted
   const deletedIds = await getSQLServerDataByQuery(
     'SELECT DISTINCT idPODetail FROM ProductionOrderDetailDeletes'
   );
 
-  // //Put the ids into a WHERE clause format
-  // const deleltedIdClause =
+  //Put the ids into a WHERE clause format
+  const deletedIdClause = deletedIds.reduce((acc, value, index) => {
+    const { idPODetail } = value;
+    if (index === deletedIds.length - 1) {
+      acc += `'${idPODetail}')`;
+    } else {
+      acc += `'${idPODetail}',`;
+    }
+    return acc;
+  }, `(`);
+
+  const importsToUpdate = await getSQLServerData(
+    '[Andromeda-UpTo].[dbo].[ProductionOrdersImport]',
+    `WHERE idPODetail in ${deletedIdClause}`
+  );
+
+  return importsToUpdate;
 };
+
+const updateImports = async (arr) => {};
 
 //Returns an array of objects retrieved from the DB of all ids of po details that have been deleted, but are still active in our DB
 const getDeletedPODetails = async (ids) => {
@@ -92,7 +109,9 @@ const getDeletedPODetails = async (ids) => {
   // );
 
   // const insertAndDeleteErrors = await insertAndDeleteDetails(deletedPODetails);
-  await updateProductionImport();
+
+  const importsToUpdate = await getProductionOrderImportsToUpdate();
+  await updateImports(importsToUpdate);
 };
 
 module.exports = {
