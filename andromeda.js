@@ -26,23 +26,26 @@ const insertAndDeleteDetails = async (arr) => {
 
   submitErrors.length && errors.push(submitErrors);
 
-  //Delete records from the archive
-  for (let i = 0; i < arr.length; ++i) {
-    const record = arr[i];
-    const { idPO, idPODetail, Style, Color } = record;
-    try {
-      await submitQuery(
-        `DELETE FROM ProductionOrderDetailImportArchive WHERE idPODetail = '${idPODetail}'`
-      );
-    } catch (err) {
-      errors.push({
-        idPO,
-        idPODetail,
-        style: Style,
-        color: Color,
-        err: err?.message,
-      });
+  // Get the ids that were deleted as a string that can be used in a WHERE clause
+  const idStr = arr.reduce((acc, current, index) => {
+    if (index === arr.length - 1) {
+      acc += `'${current.idPODetail}')`;
+    } else {
+      acc += `'${current.idPODetail}',`;
     }
+    return acc;
+  }, `(`);
+
+  console.log(idStr);
+  try {
+    await submitQuery(
+      `DELETE FROM ProductionOrderDetailImportArchive WHERE idPODetail IN ${idStr}`
+    );
+    console.log('Deleted');
+  } catch (err) {
+    errors.push({
+      err: err?.message,
+    });
   }
 
   return errors.flat();
@@ -81,6 +84,7 @@ const updateImports = async (arr) => {
   const errors = [];
   for (let i = 0; i < arr.length; ++i) {
     const { idPO, Style, Color } = arr[i];
+    console.log(idPO, Style, Color);
     const newId = await getNewIdPODetail(
       `WHERE
 			idPO = '${idPO}'
@@ -129,6 +133,8 @@ const deletePODetails = async (ids) => {
     const insertAndDeleteErrors = await insertAndDeleteDetails(
       deletedPODetails
     );
+
+    console.log(insertAndDeleteErrors);
 
     // Update the import table with the correct id
     const importsToUpdate = await getProductionOrderImportsToUpdate(
