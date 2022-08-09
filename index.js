@@ -8,7 +8,7 @@ const { sendErrorReport } = require('./functions/errorReporting.js');
 
 const { getCurrentPODetailIds, deletePODetails } = require('./andromeda');
 
-const server = app.listen(6000, async () => {
+const server = app.listen(6026, async () => {
   console.log('Andromeda PO Detail Deletes is running...');
   const errors = [];
   try {
