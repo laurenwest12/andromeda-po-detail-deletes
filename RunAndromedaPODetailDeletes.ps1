@@ -1,0 +1,1 @@
+node C:\Users\echo\Documents\Development\andromeda-po-detail-deletes\index.js

@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 
 const { type } = require('./config.js');
-const { connectDb } = require('./sql');
+const { connectDb, executeProcedure } = require('./sql');
 const { andromedaAuthorization } = require('./authorization.js');
 const { sendErrorReport } = require('./functions/errorReporting.js');
 
@@ -19,6 +19,7 @@ const server = app.listen(6026, async () => {
     const andromedaIds = await getCurrentPODetailIds();
     const deleteErrors = await deletePODetails(andromedaIds);
     deleteErrors && errors.push(deleteErrors);
+    await executeProcedure('ProductionOrderExportToEHOINT'); 
   } catch (err) {
     errors.push({
       err: err?.message,
