@@ -7,7 +7,7 @@ const {
   getSQLServerDataByQuery,
 } = require('./sql');
 
-//Returns an array of all current ids for po details
+//Returns an array of all current po detail ids
 const getCurrentPODetailIds = async () => {
   const { data } = await axios.post(`${url}/search/query/${idQuery}`);
   return data.map(({ id_productionorderdetail }) => id_productionorderdetail);
@@ -128,8 +128,9 @@ const deletePODetails = async (ids) => {
     ({ idPODetail }) => !ids.includes(parseInt(idPODetail))
   );
 
+  // If there are deleted details...
   if (deletedPODetails.length) {
-    // Insert po details into delete table and then delete from archive
+    // Insert po details into a table and then delete from archive
     const insertAndDeleteErrors = await insertAndDeleteDetails(
       deletedPODetails
     );

@@ -48,7 +48,7 @@ const getSQLServerDataByQuery = async (query) => {
 const getValues = (obj, timestamp) => {
   const values = Object.values(obj);
   const sqlString = values.reduce((acc, value, index) => {
-    typeof value === 'string' && value.replaceAll("'", "''");
+    // typeof value === 'string' && value.replaceAll("'", "''");
     if (typeof value === 'object') {
       acc += `'${value.toISOString()}',`;
     } else if (index === values.length - 1 && timestamp) {
