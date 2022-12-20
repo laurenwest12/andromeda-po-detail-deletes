@@ -2,7 +2,7 @@
 
 ## Description
 
-Program that compares the PO detail rows in [Andromenda-DownFrom].[dbo].[ProductionOrderDetailImportArchive] to the PO detail rows that are currently in Andromeda. If there are detail rows that are in the table, but not in Andromeda, they will be deleted from the table.
+Program that compares the PO detail rows in [Andromenda-DownFrom].[dbo].[ProductionOrderDetailImportArchive] to the PO detail rows that are currently in Andromeda. If there are detail rows that are in the table, but not in Andromeda, then they will be deleted from the table.
 
 ## Schedule
 
